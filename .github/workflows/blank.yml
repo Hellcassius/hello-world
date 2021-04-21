@@ -1,0 +1,44 @@
+# This is a basic workflow to help you get started with Actions
+
+name: CI
+
+# Controls when the action will run. 
+on:
+  # Triggers the workflow on push or pull request events but only for the main branch
+  push:
+    branches: [ main ]
+
+
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install dependencies
+      run: |
+        dir
+        apt install ffmpeg
+        for f in ./**/*.mkv; do ffmpeg -n -i \"\$f\" -acodec copy -scodec mov_text \"\${f%.mkv}.mp4\"; done
+        ls -a
+        dir
+
+    - name: Commit files
+      id: commit
+      run: |
+        git config --local user.email "caiorogerio.santos@github.com"
+        git config --local user.name "hellcassius"
+        git add --all
+        if [-z "$(git status --porcelain)"]; then
+           echo "::set-output name=push::false"
+        else
+           git commit -m "Conversion succeeded" -a
+           echo "::set-output name=push::true"
+        fi
+      shell: bash
+    - name: Push changes
+      if: steps.commit.outputs.push == 'true'
+      uses: ad-m/github-push-action@master
+      with:
+         github_token: ${{ secrets.GIT_TOKEN}}
